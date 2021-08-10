@@ -79,6 +79,7 @@ fn common_diesel_types(types: &mut HashSet<&str>) {
     types.insert("Timestamp");
     types.insert("Date");
     types.insert("Time");
+    types.insert("Datetime");
 
     // hidden type defs
     types.insert("Float4");

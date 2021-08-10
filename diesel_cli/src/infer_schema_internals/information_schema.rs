@@ -12,7 +12,7 @@ use diesel::pg::Pg;
 use diesel::query_builder::{QueryFragment, QueryId};
 use diesel::*;
 
-use self::information_schema::{columns, key_column_usage, table_constraints, tables};
+use self::information_schema::{columns, key_column_usage, tables};
 use super::data_structures::*;
 use super::inference;
 use super::table_data::TableName;
@@ -238,13 +238,7 @@ where
             Filter<
                 Filter<
                     Select<key_column_usage::table, key_column_usage::column_name>,
-                    EqAny<
-                        key_column_usage::constraint_name,
-                        Filter<
-                            Select<table_constraints::table, table_constraints::constraint_name>,
-                            Eq<table_constraints::constraint_type, &'static str>,
-                        >,
-                    >,
+                    Eq<key_column_usage::constraint_name, &'a str>,
                 >,
                 Eq<key_column_usage::table_name, &'a String>,
             >,
@@ -255,11 +249,6 @@ where
     Conn::Backend: QueryMetadata<sql_types::Text>,
 {
     use self::information_schema::key_column_usage::dsl::*;
-    use self::information_schema::table_constraints::constraint_type;
-
-    let pk_query = table_constraints::table
-        .select(table_constraints::constraint_name)
-        .filter(constraint_type.eq("PRIMARY KEY"));
 
     let schema_name = match table.schema {
         Some(ref name) => Cow::Borrowed(name),
@@ -268,7 +257,7 @@ where
 
     key_column_usage
         .select(column_name)
-        .filter(constraint_name.eq_any(pk_query))
+        .filter(constraint_name.eq("PRIMARY"))
         .filter(table_name.eq(&table.sql_name))
         .filter(table_schema.eq(schema_name))
         .order(ordinal_position)
